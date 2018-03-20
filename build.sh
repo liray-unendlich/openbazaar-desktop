@@ -48,7 +48,7 @@ echo 'Copying transpiled files into js folder...'
 cp -rf prod/* js/
 
 
-case "$TRAVIS_OS_NAME" in
+case "1" in
   "linux")
 
     echo 'Linux builds'
@@ -139,21 +139,8 @@ case "$TRAVIS_OS_NAME" in
 
     ;;
 
-  "osx")
+  "win")
 
-    brew update > /dev/null
-    brew install jq
-    brew link jq
-    curl -L https://dl.bintray.com/develar/bin/7za -o /tmp/7za
-    chmod +x /tmp/7za
-    curl -L https://dl.bintray.com/develar/bin/wine.7z -o /tmp/wine.7z
-    /tmp/7za x -o/usr/local/Cellar -y /tmp/wine.7z
-
-    brew link --overwrite fontconfig gd gnutls jasper libgphoto2 libicns libtasn1 libusb libusb-compat little-cms2 nettle openssl sane-backends webp wine git-lfs gnu-tar dpkg xz
-    brew install freetype graphicsmagick
-    brew link xz
-    brew install mono
-    brew link mono
 
     # Retrieve Latest Server Binaries
     cd temp/
@@ -215,59 +202,5 @@ case "$TRAVIS_OS_NAME" in
       grunt create-windows-installer --appname=PhoreMarketplaceClient --obversion=$PACKAGE_VERSION --appdir=dist/PhoreMarketplaceClient-win32-x64 --outdir=dist/win64
       mv dist/win64/OpenBazaar2ClientSetup.exe dist/win64/PhoreMarketplaceClient-$PACKAGE_VERSION-Setup-64.exe
     fi
-
-    # OSX
-    echo 'Building OSX Installer'
-    mkdir dist/osx
-
-    # Install the DMG packager
-    echo 'Installing electron-installer-dmg'
-    npm install -g electron-installer-dmg
-
-    # Sign openbazaar-go binary
-    echo 'Signing Go binary'
-    mv temp/openbazaar-go-darwin-10.6-amd64 dist/osx/openbazaard
-    codesign --force --sign "$SIGNING_IDENTITY" dist/osx/openbazaard
-
-    echo 'Running Electron Packager...'
-    if [ -z "$CLIENT_VERSION" ]; then
-      electron-packager . PhoreMarketplace --out=dist -app-category-type=public.app-category.business --protocol-name=PhoreMarketplace --protocol=ob --platform=darwin --arch=x64 --icon=imgs/openbazaar2.icns --electron-version=${ELECTRONVER} --overwrite --app-version=$PACKAGE_VERSION
-
-      echo 'Creating openbazaar-go folder in the OS X .app'
-      mkdir dist/PhoreMarketplace-darwin-x64/PhoreMarketplace.app/Contents/Resources/openbazaar-go
-
-      echo 'Moving binary to correct folder'
-      mv dist/osx/openbazaard dist/PhoreMarketplace-darwin-x64/PhoreMarketplace.app/Contents/Resources/openbazaar-go/openbazaard
-      chmod +x dist/PhoreMarketplace-darwin-x64/PhoreMarketplace.app/Contents/Resources/openbazaar-go/openbazaard
-    else
-      electron-packager . PhoreMarketplaceClient --out=dist -app-category-type=public.app-category.business --protocol-name=Phore --protocol=ob --platform=darwin --arch=x64 --icon=imgs/openbazaar2.icns --electron-version=${ELECTRONVER} --overwrite --app-version=$PACKAGE_VERSION
-    fi
-
-    echo 'Codesign the .app'
-    if [ -z "$CLIENT_VERSION" ]; then
-      codesign --force --deep --sign "$SIGNING_IDENTITY" dist/PhoreMarketplace-darwin-x64/PhoreMarketplace.app
-      electron-installer-dmg dist/PhoreMarketplace-darwin-x64/PhoreMarketplace.app Marketplace-$PACKAGE_VERSION --icon ./imgs/openbazaar2.icns --out=dist/PhoreMarketplace-darwin-x64 --overwrite --background=./imgs/osx-finder_background.png --debug
-    else
-      codesign --force --deep --sign "$SIGNING_IDENTITY" dist/PhoreMarketplaceClient-darwin-x64/PhoreMarketplaceClient.app
-      electron-installer-dmg dist/PhoreMarketplaceClient-darwin-x64/PhoreMarketplaceClient.app MarketplaceClient-$PACKAGE_VERSION --icon ./imgs/openbazaar2.icns --out=dist/PhoreMarketplaceClient-darwin-x64 --overwrite --background=./imgs/osx-finder_background.png --debug
-    fi
-
-    echo 'Codesign the DMG and zip'
-    if [ -z "$CLIENT_VERSION" ]; then
-      codesign --force --sign "$SIGNING_IDENTITY" dist/PhoreMarketplace-darwin-x64/Marketplace-$PACKAGE_VERSION.dmg
-      cd dist/PhoreMarketplace-darwin-x64/
-      zip -q -r Marketplace-mac-$PACKAGE_VERSION.zip PhoreMarketplace.app
-      cp -r PhoreMarketplace.app ../osx/
-      cp Marketplace-mac-$PACKAGE_VERSION.zip ../osx/
-      cp Marketplace-$PACKAGE_VERSION.dmg ../osx/
-    else
-      codesign --force --sign "$SIGNING_IDENTITY" dist/PhoreMarketplaceClient-darwin-x64/MarketplaceClient-$PACKAGE_VERSION.dmg
-      cd dist/PhoreMarketplaceClient-darwin-x64/
-      zip -q -r MarketplaceClient-mac-$PACKAGE_VERSION.zip PhoreMarketplaceClient.app
-      cp -r PhoreMarketplaceClient.app ../osx/
-      cp MarketplaceClient-mac-$PACKAGE_VERSION.zip ../osx/
-      cp MarketplaceClient-$PACKAGE_VERSION.dmg ../osx/
-    fi
-
     ;;
 esac
