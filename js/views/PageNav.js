@@ -9,13 +9,16 @@ import app from '../app';
 import $ from 'jquery';
 import {
   launchEditListingModal, launchAboutModal,
-  launchWallet, launchSettingsModal,
+  launchWallet, launchSettingsModal, getWallet,
 } from '../utils/modalManager';
 import Listing from '../models/listing/Listing';
 import { getAvatarBgImage } from '../utils/responsive';
 import PageNavServersMenu from './PageNavServersMenu';
 import { getNotifDisplayData } from '../collections/Notifications';
 import Notifications from './notifications/Notificiations';
+import { getOpenModals } from '../views/modals/BaseModal';
+import Wallet from './modals/wallet/Wallet';
+
 
 export default class extends BaseVw {
   constructor(options) {
@@ -43,6 +46,7 @@ export default class extends BaseVw {
         'click .js-navNotifBtn': 'onClickNavNotifBtn',
         'click .js-notifContainer': 'onClickNotifContainer',
         'click .js-notificationListItem a[href]': 'onClickNotificationLink',
+        'click .navBtn': 'updateTabs',
       },
       navigable: false,
       ...options,
@@ -84,6 +88,19 @@ export default class extends BaseVw {
       this.getCachedEl('.js-notifUnreadBadge').addClass('hide');
       this.stopListening(e.socket, 'message', this.onSocketMessage);
     });
+  }
+
+  updateTabs() {
+    $('.navBtn').removeClass('active');
+    const openModals = getOpenModals();
+    const topModal = openModals[openModals.length - 1];
+    if ($('.js-notifContainer').hasClass('open')) {
+      $('.js-navNotifBtn').addClass('active');
+    } else if ($('.js-navList').hasClass('open')) {
+      $('.js-navListBtn').addClass('active');
+    } else if (topModal instanceof Wallet) {
+      $('.js-navWalletBtn').addClass('active');
+    }
   }
 
   onSocketMessage(e) {
@@ -272,6 +289,7 @@ export default class extends BaseVw {
     // there's a flicker frmo the old page to the new page.
     setTimeout(() => {
       this.closeNavMenu();
+      this.updateTabs();
     });
   }
 
@@ -289,33 +307,16 @@ export default class extends BaseVw {
     const isOpen = this.$navList.hasClass('open');
     this.$navList.toggleClass('open', !isOpen);
     this.$navOverlay.toggleClass('open', !isOpen);
-     
 
     if (!isOpen) {
       this.$connManagementContainer.removeClass('open');
     }
-
-    if (isOpen) {
-       //// Dispatch event to listen for when Notifications Modal is closed
-       var closeModal = new CustomEvent("closeModal", { "detail": "Close Modal window" });
-       document.dispatchEvent(closeModal);
-      ////////
-    }
-
   }
 
   closeNavMenu() {
-    const isOpen = this.$navList.hasClass('open');
     this.$navList.removeClass('open');
     this.$navOverlay.removeClass('open');
     this.$connManagementContainer.removeClass('open');
-    
-    if (isOpen) {
-      //// Dispatch event to listen for when Notifications Modal is closed
-      var closeModal = new CustomEvent("closeModal", { "detail": "Close Modal window" });
-      document.dispatchEvent(closeModal);
-      ////////
-    }
   }
 
   onNavListClick(e) {
@@ -339,7 +340,6 @@ export default class extends BaseVw {
     if (this.isNotificationsOpen()) {
       this.closeNotifications();
       this.$navOverlay.removeClass('open');
-
     } else {
       this.$navOverlay.addClass('open');
 
@@ -370,12 +370,6 @@ export default class extends BaseVw {
     if (opts.closeNavList) this.$navList.removeClass('open');
     this.getCachedEl('.js-notifContainer').removeClass('open');
     if (opts.closeOverlay) this.$navOverlay.removeClass('open');
-
-                //// Dispatch event to listen for when Notifications Modal is closed
-                var closeModal = new CustomEvent("closeModal", { "detail": "Close Modal window" });
-                document.dispatchEvent(closeModal);
-                ////////
-
     if (this.notifications) {
       const count = this.unreadNotifCount;
       if (this.unreadNotifCount) {
@@ -399,6 +393,7 @@ export default class extends BaseVw {
   onDocClick() {
     this.closeNotifications();
     this.closeNavMenu();
+    this.updateTabs();
   }
 
   onFocusInAddressBar() {
@@ -449,7 +444,15 @@ export default class extends BaseVw {
   }
 
   navWalletClick() {
-    launchWallet();
+    const wallet = getWallet();
+    if ((!wallet || !wallet.isOpen())) {
+      launchWallet();
+    } else {
+      if (!$('.js-notifContainer').hasClass('open') && !$('.js-navList').hasClass('open')) {
+        wallet.close();
+        $('.js-navWalletBtn').removeClass('active');
+      }
+    }
   }
 
   navCreateListingClick() {

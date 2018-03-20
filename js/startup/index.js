@@ -23,7 +23,7 @@ export function fixLinuxZoomIssue() {
 
 /**
  * For most cases, this handler will be able to identify an external link because
- * it will be prefaced with an "external" protocol (e.g. http, ftp). An exception
+ * it will be prefaced with an 'external' protocol (e.g. http, ftp). An exception
  * to this is any user based url (e.g. www.espn.com). In that case, add a
  * 'data-open-external' attribute to the url to force it to be opened externally.
  */
@@ -75,43 +75,10 @@ export function handleLinks() {
   });
 }
 
-window.onblur = function() {
-  //document.documentElement.classList.toggle("window-blurred");
-  document.documentElement.classList.add("window-blurred");
-}
+window.onblur = () => {
+  document.documentElement.classList.add('window-blurred');
+};
 
-window.onfocus = function() {
-  //document.documentElement.classList.toggle("window-blurred");
-  document.documentElement.classList.remove("window-blurred");
-}
-
-
-setTimeout(
-  function() {
-
-      document.addEventListener("closeModal", function() {
-          $('.navBtn').removeClass("active");
-          // console.log('closed modal');
-          setTimeout(
-            function() {
-          if ($('.modal.wallet').length && !$('.js-navList').hasClass("open") && !$('.modal.settings').length)  {
-              $('.js-navWalletBtn').addClass("active");
-          }
-        }, 10);
-      });
-
-      $(".navBtn").on("click", function() {
-          $(".navBtn").removeClass("active");
-          $(this).addClass("active");
-      });
-
-      $(".js-navWalletBtn").on("click", function() {
-          if ($('.modal.wallet').length && !$('.js-notifContainer').hasClass("open") && !$('.js-navList').hasClass("open")) {
-              setTimeout(function() {
-                  $(".modalCloseBtn")[0].click();
-              }, 10);
-          }
-      });
-
-}, 1000);
-
+window.onfocus = () => {
+  document.documentElement.classList.remove('window-blurred');
+};
